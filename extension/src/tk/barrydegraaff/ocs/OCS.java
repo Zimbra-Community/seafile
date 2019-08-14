@@ -18,7 +18,8 @@ along with this program.  If not, see http://www.gnu.org/licenses/.
 */
 package tk.barrydegraaff.ocs;
 
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import com.zimbra.common.service.ServiceException;
 import com.zimbra.common.soap.Element;
@@ -35,13 +36,10 @@ import java.nio.charset.StandardCharsets;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.Properties;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.Set;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 
 public class OCS extends DocumentHandler {
     private String token = "";
@@ -178,12 +176,26 @@ public class OCS extends DocumentHandler {
         String shareLink = "";
         try {
             if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
-                //final String urlParameters = "path=" + request.getAttribute("path") + "&shareType=" + request.getAttribute("shareType") + "&password=" + request.getAttribute("password");
                 String repo_id = getRepoId(request.getAttribute("path"));
 
                 removeShareLinkIfExists(request, zsc, repo_id, getPath(request.getAttribute("path")));
 
-                final String urlParameters = "{\"repo_id\":\"" + repo_id + "\", \"path\":\"" + getPath(request.getAttribute("path")) + "\", \"permissions\":{\"can_edit\":false,\"can_download\":true}}";
+                String urlParameters = "{\"repo_id\":\"" + repo_id + "\", \"path\":\"" + getPath(request.getAttribute("path")) + "\", \"permissions\":{\"can_edit\":false,\"can_download\":true}";
+
+                if (!"".equals(request.getAttribute("password"))) {
+                    urlParameters += ", \"password\":\"" + request.getAttribute("password") + "\"";
+                }
+
+                if (!"".equals(request.getAttribute("expiryDate"))) {
+                    Date expirationDate = new SimpleDateFormat("yyyy-MM-dd").parse(request.getAttribute("expiryDate"));
+                    long diff = expirationDate.getTime() - new Date().getTime();
+                    long days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+                    if (days > 0) {
+                        urlParameters += ", \"expire_days\":\"" + days + "\"";
+                    }
+                }
+
+                urlParameters += "}";
 
                 byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
                 int postDataLength = postData.length;
