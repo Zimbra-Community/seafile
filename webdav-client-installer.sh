@@ -186,7 +186,7 @@ TMPFOLDER="$(mktemp -d /tmp/webdav-client-installer.XXXXXXXX)"
 echo "Saving existing configuration to $TMPFOLDER/upgrade"
 mkdir $TMPFOLDER/upgrade
 if [ -f ${OWNCLOUD_EXTENSION_PATH}/config.properties ]; then
-   cat ${OWNCLOUD_EXTENSION_PATH}/config.properties | grep -v seafile > $TMPFOLDER/upgrade/config.properties
+   cat ${OWNCLOUD_EXTENSION_PATH}/config.properties | grep -v seafile | grep -v owncloud_zimlet_extra_toolbar_button_title > $TMPFOLDER/upgrade/config.properties
    sed -i "s^Nextcloud^Seafile^g" $TMPFOLDER/upgrade/config.properties
 else
    touch $TMPFOLDER/upgrade/config.properties
@@ -225,7 +225,7 @@ owncloud_zimlet_server_port=
 owncloud_zimlet_server_path=/nextcloud/remote.php/webdav/
 owncloud_zimlet_oc_folder=/nextcloud
 owncloud_zimlet_disable_rename_delete_new_folder=false
-owncloud_zimlet_extra_toolbar_button_title=Go to Nextcloud
+owncloud_zimlet_extra_toolbar_button_title=
 owncloud_zimlet_extra_toolbar_button_url=owncloud_zimlet_oc_folder
 owncloud_zimlet_app_title=Nextcloud
 owncloud_zimlet_max_upload_size=104857600
