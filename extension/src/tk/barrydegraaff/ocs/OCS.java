@@ -18,6 +18,8 @@ along with this program.  If not, see http://www.gnu.org/licenses/.
 */
 package tk.barrydegraaff.ocs;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -59,6 +61,14 @@ public class OCS extends DocumentHandler {
             switch (request.getAttribute("action")) {
                 case "createShare":
                     return createShare(request, response, zsc, this.token);
+                case "createLibrary":
+                    return createLibrary(request, response, zsc, this.token);
+                case "deleteLibrary":
+                    return deleteLibrary(request, response, zsc, this.token);
+                case "renameLibrary":
+                    return renameLibrary(request, response, zsc, this.token);
+                case "moveFile":
+                    return moveFile(request, response, zsc, this.token);
                 default:
                     return (response);
             }
@@ -74,7 +84,7 @@ public class OCS extends DocumentHandler {
     private String getToken(Element request, ZimbraSoapContext zsc) {
         try {
             if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
-                final String urlParameters = "username=" + request.getAttribute("owncloud_zimlet_username") + "&password=" + request.getAttribute("owncloud_zimlet_password");
+                final String urlParameters = "username=" + uriDecode(request.getAttribute("owncloud_zimlet_username")) + "&password=" + uriDecode(request.getAttribute("owncloud_zimlet_password"));
 
                 byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
                 int postDataLength = postData.length;
@@ -372,6 +382,251 @@ public class OCS extends DocumentHandler {
         return;
     }
 
+    /**
+     * Creates Seafile Library
+     *
+     * Test call:
+     var soapDoc = AjxSoapDoc.create("OCS", "urn:OCS", null);
+     var params = {
+     soapDoc: soapDoc,
+     asyncMode: true,
+     callback: null
+     };
+     soapDoc.getMethod().setAttribute("action", "createLibrary");
+     soapDoc.getMethod().setAttribute("name", "test");
+     soapDoc.set('owncloud_zimlet_password', encodeURIComponent(tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_password']));
+     soapDoc.set('owncloud_zimlet_username', encodeURIComponent(tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_username']));
+     soapDoc.set('owncloud_zimlet_server_name', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_name']);
+     soapDoc.set('owncloud_zimlet_server_port', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_port']);
+     soapDoc.set('owncloud_zimlet_server_path', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_path']);
+     soapDoc.set('owncloud_zimlet_oc_folder', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_oc_folder']);
+
+     appCtxt.getAppController().sendRequest(params);
+
+     *
+     */
+    private Element createLibrary(Element request, Element response, ZimbraSoapContext zsc, String token) {
+        try {
+            if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
+                final String urlParameters = "name=" + request.getAttribute("name");
+
+                byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+                int postDataLength = postData.length;
+
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/";
+                URL url = new URL(requestUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setDoOutput(true);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setRequestProperty("Charset", "utf-8");
+                conn.setRequestProperty("Content-Length", Integer.toString(postDataLength));
+                conn.setRequestProperty("X-Forwarded-For", zsc.getRequestIP());
+                conn.setRequestProperty("Authorization", "Token " + token);
+                conn.setRequestProperty("Accept", "application/json; indent=0");
+                conn.setUseCaches(false);
+
+                try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
+                    wr.write(postData);
+                }
+
+                InputStream _is;
+                if (conn.getResponseCode() < 400) {
+                    _is = conn.getInputStream();
+                } else {
+                    _is = conn.getErrorStream();
+                }
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(_is));
+
+                String inputLine;
+                StringBuffer responseTxt = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    responseTxt.append(inputLine);
+                }
+                in.close();
+
+                response.addAttribute("createLibrary", responseTxt.toString());
+                return response;
+            }
+        } catch (Exception err) {
+            err.printStackTrace();
+            response.addAttribute("createLibrary", err.toString());
+            return response;
+        }
+        return response;
+    }
+
+    private Element deleteLibrary(Element request, Element response, ZimbraSoapContext zsc, String token) {
+        try {
+            if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
+                String repoId = getRepoId("/"+uriDecode(request.getAttribute("name"))+"/");
+
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/"+repoId+"/";
+                URL url = new URL(requestUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setDoOutput(true);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestMethod("DELETE");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setRequestProperty("Charset", "utf-8");
+                conn.setRequestProperty("X-Forwarded-For", zsc.getRequestIP());
+                conn.setRequestProperty("Authorization", "Token " + token);
+                conn.setRequestProperty("Accept", "application/json; indent=0");
+                conn.setUseCaches(false);
+
+                InputStream _is;
+                if (conn.getResponseCode() < 400) {
+                    _is = conn.getInputStream();
+                } else {
+                    _is = conn.getErrorStream();
+                }
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(_is));
+
+                String inputLine;
+                StringBuffer responseTxt = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    responseTxt.append(inputLine);
+                }
+                in.close();
+
+                response.addAttribute("deleteLibrary", responseTxt.toString());
+                return response;
+            }
+        } catch (Exception err) {
+            err.printStackTrace();
+            response.addAttribute("deleteLibrary", err.toString());
+            return response;
+        }
+        return response;
+    }
+
+    private Element renameLibrary(Element request, Element response, ZimbraSoapContext zsc, String token) {
+        try {
+            if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
+                String repoId = getRepoId("/"+uriDecode(request.getAttribute("oldName"))+"/");
+                final String urlParameters = "repo_name=" + request.getAttribute("newName");
+
+                byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+                int postDataLength = postData.length;
+
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/"+repoId+"/?op=rename";
+                URL url = new URL(requestUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setDoOutput(true);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setRequestProperty("Charset", "utf-8");
+                conn.setRequestProperty("Content-Length", Integer.toString(postDataLength));
+                conn.setRequestProperty("X-Forwarded-For", zsc.getRequestIP());
+                conn.setRequestProperty("Authorization", "Token " + token);
+                conn.setRequestProperty("Accept", "application/json; indent=0");
+                conn.setUseCaches(false);
+
+                try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
+                    wr.write(postData);
+                }
+
+                InputStream _is;
+                if (conn.getResponseCode() < 400) {
+                    _is = conn.getInputStream();
+                } else {
+                    _is = conn.getErrorStream();
+                }
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(_is));
+
+                String inputLine;
+                StringBuffer responseTxt = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    responseTxt.append(inputLine);
+                }
+                in.close();
+
+                response.addAttribute("renameLibrary", responseTxt.toString());
+                return response;
+            }
+        } catch (Exception err) {
+            err.printStackTrace();
+            response.addAttribute("renameLibrary", err.toString());
+            return response;
+        }
+        return response;
+    }
+
+    private Element moveFile(Element request, Element response, ZimbraSoapContext zsc, String token) {
+        try {
+            if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
+                String repoId = getRepoId("/"+uriDecode(request.getAttribute("oldPath"))+"/");
+                String destRepoId = getRepoId("/"+uriDecode(request.getAttribute("newPath"))+"/");
+
+                Path dest = Paths.get(uriDecode(request.getAttribute("newPath")));
+                String destPath = getPath("/"+dest.getParent().toString()+"/");
+                final String urlParameters = "operation=move&dst_repo="+destRepoId+"&dst_dir="+destPath;
+
+                byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
+                int postDataLength = postData.length;
+
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/"+repoId+"/file/?p="+getPath("/"+request.getAttribute("oldPath"));
+                URL url = new URL(requestUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setDoOutput(true);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setRequestProperty("Charset", "utf-8");
+                conn.setRequestProperty("Content-Length", Integer.toString(postDataLength));
+                conn.setRequestProperty("X-Forwarded-For", zsc.getRequestIP());
+                conn.setRequestProperty("Authorization", "Token " + token);
+                conn.setRequestProperty("Accept", "application/json; indent=0");
+                conn.setUseCaches(false);
+
+                try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
+                    wr.write(postData);
+                }
+
+                InputStream _is;
+                if (conn.getResponseCode() < 400) {
+                    _is = conn.getInputStream();
+                } else {
+                    _is = conn.getErrorStream();
+                }
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(_is));
+
+                String inputLine;
+                StringBuffer responseTxt = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    responseTxt.append(inputLine);
+                }
+                in.close();
+
+                response.addAttribute("renameLibrary", responseTxt.toString());
+                return response;
+            }
+        } catch (Exception err) {
+            err.printStackTrace();
+            response.addAttribute("renameLibrary", err.toString());
+            return response;
+        }
+        return response;
+    }
+
     private String uriDecode(String dirty) {
         try {
             String clean = java.net.URLDecoder.decode(dirty, "UTF-8");
@@ -379,15 +634,6 @@ public class OCS extends DocumentHandler {
         } catch (Exception ex) {
             return ex.toString();
         }
-    }
-
-    private boolean isNumeric(String str) {
-        try {
-            double d = Double.parseDouble(str);
-        } catch (NumberFormatException nfe) {
-            return false;
-        }
-        return true;
     }
 
     public static boolean checkPermissionOnTarget(String host) {
