@@ -69,6 +69,8 @@ public class OCS extends DocumentHandler {
                     return renameLibrary(request, response, zsc, this.token);
                 case "moveFile":
                     return moveFile(request, response, zsc, this.token);
+                case "loginRedirect":
+                    return loginRedirect(request, response, zsc, this.token);
                 default:
                     return (response);
             }
@@ -384,26 +386,24 @@ public class OCS extends DocumentHandler {
 
     /**
      * Creates Seafile Library
-     *
+     * <p>
      * Test call:
-     var soapDoc = AjxSoapDoc.create("OCS", "urn:OCS", null);
-     var params = {
-     soapDoc: soapDoc,
-     asyncMode: true,
-     callback: null
-     };
-     soapDoc.getMethod().setAttribute("action", "createLibrary");
-     soapDoc.getMethod().setAttribute("name", "test");
-     soapDoc.set('owncloud_zimlet_password', encodeURIComponent(tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_password']));
-     soapDoc.set('owncloud_zimlet_username', encodeURIComponent(tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_username']));
-     soapDoc.set('owncloud_zimlet_server_name', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_name']);
-     soapDoc.set('owncloud_zimlet_server_port', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_port']);
-     soapDoc.set('owncloud_zimlet_server_path', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_path']);
-     soapDoc.set('owncloud_zimlet_oc_folder', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_oc_folder']);
-
-     appCtxt.getAppController().sendRequest(params);
-
-     *
+     * var soapDoc = AjxSoapDoc.create("OCS", "urn:OCS", null);
+     * var params = {
+     * soapDoc: soapDoc,
+     * asyncMode: true,
+     * callback: null
+     * };
+     * soapDoc.getMethod().setAttribute("action", "createLibrary");
+     * soapDoc.getMethod().setAttribute("name", "test");
+     * soapDoc.set('owncloud_zimlet_password', encodeURIComponent(tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_password']));
+     * soapDoc.set('owncloud_zimlet_username', encodeURIComponent(tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_username']));
+     * soapDoc.set('owncloud_zimlet_server_name', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_name']);
+     * soapDoc.set('owncloud_zimlet_server_port', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_port']);
+     * soapDoc.set('owncloud_zimlet_server_path', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_server_path']);
+     * soapDoc.set('owncloud_zimlet_oc_folder', tk_barrydegraaff_owncloud_zimlet_HandlerObject.settings['owncloud_zimlet_oc_folder']);
+     * <p>
+     * appCtxt.getAppController().sendRequest(params);
      */
     private Element createLibrary(Element request, Element response, ZimbraSoapContext zsc, String token) {
         try {
@@ -464,9 +464,9 @@ public class OCS extends DocumentHandler {
     private Element deleteLibrary(Element request, Element response, ZimbraSoapContext zsc, String token) {
         try {
             if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
-                String repoId = getRepoId("/"+uriDecode(request.getAttribute("name"))+"/");
+                String repoId = getRepoId("/" + uriDecode(request.getAttribute("name")) + "/");
 
-                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/"+repoId+"/";
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/" + repoId + "/";
                 URL url = new URL(requestUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -512,13 +512,13 @@ public class OCS extends DocumentHandler {
     private Element renameLibrary(Element request, Element response, ZimbraSoapContext zsc, String token) {
         try {
             if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
-                String repoId = getRepoId("/"+uriDecode(request.getAttribute("oldName"))+"/");
+                String repoId = getRepoId("/" + uriDecode(request.getAttribute("oldName")) + "/");
                 final String urlParameters = "repo_name=" + request.getAttribute("newName");
 
                 byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
                 int postDataLength = postData.length;
 
-                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/"+repoId+"/?op=rename";
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/" + repoId + "/?op=rename";
                 URL url = new URL(requestUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -569,17 +569,17 @@ public class OCS extends DocumentHandler {
     private Element moveFile(Element request, Element response, ZimbraSoapContext zsc, String token) {
         try {
             if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
-                String repoId = getRepoId("/"+uriDecode(request.getAttribute("oldPath"))+"/");
-                String destRepoId = getRepoId("/"+uriDecode(request.getAttribute("newPath"))+"/");
+                String repoId = getRepoId("/" + uriDecode(request.getAttribute("oldPath")) + "/");
+                String destRepoId = getRepoId("/" + uriDecode(request.getAttribute("newPath")) + "/");
 
                 Path dest = Paths.get(uriDecode(request.getAttribute("newPath")));
-                String destPath = getPath("/"+dest.getParent().toString()+"/");
-                final String urlParameters = "operation=move&dst_repo="+destRepoId+"&dst_dir="+destPath;
+                String destPath = getPath("/" + dest.getParent().toString() + "/");
+                final String urlParameters = "operation=move&dst_repo=" + destRepoId + "&dst_dir=" + destPath;
 
                 byte[] postData = urlParameters.getBytes(StandardCharsets.UTF_8);
                 int postDataLength = postData.length;
 
-                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/"+repoId+"/file/?p="+getPath("/"+request.getAttribute("oldPath"));
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/repos/" + repoId + "/file/?p=" + getPath("/" + request.getAttribute("oldPath"));
                 URL url = new URL(requestUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -623,6 +623,66 @@ public class OCS extends DocumentHandler {
             err.printStackTrace();
             response.addAttribute("renameLibrary", err.toString());
             return response;
+        }
+        return response;
+    }
+
+    private Element loginRedirect(Element request, Element response, ZimbraSoapContext zsc, String token) {
+        JSONObject obj = new JSONObject();
+        try {
+            if (checkPermissionOnTarget(request.getAttribute("owncloud_zimlet_server_name"))) {
+
+                String repoId = "";
+                if (!"".equals(request.getAttribute("path"))) {
+                    repoId = getRepoId("/" + uriDecode(request.getAttribute("path")) + "/");
+                }
+                String requestUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + request.getAttribute("owncloud_zimlet_oc_folder") + "api2/client-login/";
+                URL url = new URL(requestUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                conn.setDoOutput(true);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Charset", "utf-8");
+                conn.setRequestProperty("X-Forwarded-For", zsc.getRequestIP());
+                conn.setRequestProperty("Authorization", "Token " + token);
+                conn.setRequestProperty("Accept", "application/json; indent=0");
+                conn.setUseCaches(false);
+
+                InputStream _is;
+                if (conn.getResponseCode() < 400) {
+                    _is = conn.getInputStream();
+                } else {
+                    _is = conn.getErrorStream();
+                }
+
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(_is));
+
+                String inputLine;
+                StringBuffer responseTxt = new StringBuffer();
+
+                while ((inputLine = in.readLine()) != null) {
+                    responseTxt.append(inputLine);
+                }
+                in.close();
+                obj = new JSONObject(responseTxt.toString());
+                String redirectUrl = request.getAttribute("owncloud_zimlet_server_name") + ":" + request.getAttribute("owncloud_zimlet_server_port") + "/client-login/?token=" + obj.getString("token");
+                if (!"".equals(repoId)) {
+                    redirectUrl = redirectUrl + "&next=/library/" + repoId;
+
+                    String[] mapTest = request.getAttribute("path").split("/");
+                    if (mapTest.length > 1) {
+                        redirectUrl = redirectUrl + "/" + request.getAttribute("path");
+                    }
+                }
+
+                response.addAttribute("loginRedirect", redirectUrl);
+                return response;
+
+            }
+        } catch (Exception err) {
+            err.printStackTrace();
         }
         return response;
     }
