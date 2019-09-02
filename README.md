@@ -5,7 +5,7 @@ Here you can find the installer and sources for the Seafile modification of the 
 ### Installing
 Choose Y when asked to install OCS.
 
-    wget --no-cache https://raw.githubusercontent.com/Zimbra-Community/owncloud-zimlet/soapServiceBarry/webdav-client-installer.sh -O /tmp/webdav-client-installer.sh
+    wget --no-cache https://raw.githubusercontent.com/Zimbra-Community/seafile/master/webdav-client-installer.sh -O /tmp/webdav-client-installer.sh
     chmod +rx /tmp/webdav-client-installer.sh
     /tmp/webdav-client-installer.sh 
 
