@@ -133,17 +133,9 @@ else
 fi
 
 
-echo ""
-echo "Do you want to install public link sharing?"
-echo "If you use a WebDAV server that is not ownCloud or Nextcloud choose n."
-echo "If you have trouble or are unsure, choose Y. Y/n:"
+# force enable link sharing
+YNOCS="Y"
 
-if [[ "${IS_AUTO}" == 'YES' ]]
-then
-    YNOCS="Y"
-else
-    read YNOCS;
-fi
 
 echo "Check if git and ant are installed."
 set +e
